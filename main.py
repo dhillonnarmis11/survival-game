@@ -27,12 +27,46 @@ def update_player(player, position, speed, dt, screen_width):
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, player_image):
+def draw_game(screen, player, player_image, bullets):
     screen.fill((10, 10, 25))
 
     screen.blit(player_image, player)
 
+    for bullet in bullets:
+        pygame.draw.rect(
+            screen,
+            (100, 220, 255),
+            bullet
+        )
+
     pygame.display.flip()
+
+
+
+def create_bullet(player, width, height):
+    bullet = pygame.Rect(
+        0,
+        0,
+        width,
+        height
+    )
+
+    bullet.midbottom = player.midtop
+
+    return bullet 
+
+
+
+def update_bullets(bullets, speed, dt):
+    for bullet in bullets:
+        bullet.y -= speed * dt
+
+    bullets[:] = [
+        bullet
+        for bullet in bullets
+        if bullet.bottom >= 0
+    ]
+
 
 
 
@@ -48,6 +82,11 @@ SCREEN_HEIGHT = 700
 # Player Dimensions
 PLAYER_WIDTH = 70  
 PLAYER_HEIGHT = 40  
+
+# Bullet Settings
+BULLET_WIDTH = 6
+BULLET_HEIGHT = 20
+BULLET_SPEED = 700
 
  
 # SCREEN
@@ -89,6 +128,7 @@ clock = pygame.time.Clock()
 FPS = 60
 PLAYER_SPEED = 400   # player travels 400 pixels per second 
 
+bullets = [] 
 
 running = True
 
@@ -99,8 +139,19 @@ while running:
 
     # EVENTS
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             running = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                bullets.append(
+                    create_bullet(
+                        player,
+                        BULLET_WIDTH,
+                        BULLET_HEIGHT
+                    )
+                )
 
 
     # UPDATE
@@ -113,11 +164,22 @@ while running:
         SCREEN_WIDTH
     )
 
+    update_bullets(
+        bullets,
+        BULLET_SPEED,
+        dt
+    )
+
     # RENDER
-    draw_game(screen, player, player_image)
+    draw_game(
+        screen, 
+        player, 
+        player_image,
+        bullets
+    )
 
-     
 
+    
 pygame.quit()
 
 
