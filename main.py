@@ -30,7 +30,7 @@ def update_player(player, position, speed, dt, screen_width):
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, player_image, bullets, enemy):
+def draw_game(screen, player, player_image, bullets, enemies, score, score_font):
     screen.fill((10, 10, 25))
 
     screen.blit(player_image, player)
@@ -44,6 +44,17 @@ def draw_game(screen, player, player_image, bullets, enemy):
 
     for enemy in enemies:
         enemy.draw(screen) 
+
+    score_surface = score_font.render(
+        f"Score: {score}",
+        True,
+        (255, 255, 255)
+    )
+
+    screen.blit(
+        score_surface,
+        (20, 20)
+    )
 
     pygame.display.flip()
 
@@ -93,6 +104,23 @@ def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed):
 
 
 
+def handle_collisions(bullets, enemies):
+    enemies_destroyed = 0
+
+    for bullet in bullets[:]:
+        for enemy in enemies[:]:
+
+            if bullet.colliderect(enemy.rect):
+                bullets.remove(bullet)
+                enemies.remove(enemy)
+
+                enemies_destroyed += 1
+
+                break
+
+    return enemies_destroyed
+
+
 
 
 # INITIALIZATION
@@ -122,6 +150,9 @@ ENEMY_SPAWN_TIME = 1.0
 # SCREEN
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Survival Game: Space Shooter!")
+
+
+score_font = pygame.font.Font(None, 36)
 
 
 # Player starting coordinates 
@@ -164,7 +195,7 @@ bullets = []
 
 enemies = []
 
-
+score = 0
 
 running = True
 
@@ -228,6 +259,12 @@ while running:
     for enemy in enemies:
         enemy.update(dt)
 
+    # check collisions
+    score += handle_collisions(
+        bullets,
+        enemies 
+    )
+
     # remove enemies that have gone below the screen 
     enemies[:] = [
         enemy 
@@ -242,10 +279,12 @@ while running:
         player, 
         player_image,
         bullets,
-        enemies
+        enemies,
+        score,
+        score_font
     )
 
-    
+
     
 pygame.quit()
 
