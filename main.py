@@ -1,6 +1,9 @@
 # Space Shooter - Survival Game
 
 import pygame
+import random
+
+from enemy import Enemy
 
 # FUNCTIONS
 
@@ -27,7 +30,7 @@ def update_player(player, position, speed, dt, screen_width):
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, player_image, bullets):
+def draw_game(screen, player, player_image, bullets, enemy):
     screen.fill((10, 10, 25))
 
     screen.blit(player_image, player)
@@ -38,6 +41,9 @@ def draw_game(screen, player, player_image, bullets):
             (100, 220, 255),
             bullet
         )
+
+    for enemy in enemies:
+        enemy.draw(screen) 
 
     pygame.display.flip()
 
@@ -69,6 +75,25 @@ def update_bullets(bullets, speed, dt):
 
 
 
+def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed):
+    x = random.randint(
+        0,
+        screen_width - enemy_width
+    )
+
+    y = -enemy_height 
+
+    return Enemy(
+        x,
+        y,
+        enemy_width,
+        enemy_height,
+        enemy_speed
+    )
+
+
+
+
 
 # INITIALIZATION
 
@@ -88,6 +113,11 @@ BULLET_WIDTH = 6
 BULLET_HEIGHT = 20
 BULLET_SPEED = 700
 
+# Enemies
+ENEMY_WIDTH = 60
+ENEMY_HEIGHT = 40
+ENEMY_SPEED = 150
+ENEMY_SPAWN_TIME = 1.0
  
 # SCREEN
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -128,7 +158,13 @@ clock = pygame.time.Clock()
 FPS = 60
 PLAYER_SPEED = 400   # player travels 400 pixels per second 
 
+enemy_spawn_timer = 0.0
+
 bullets = [] 
+
+enemies = []
+
+
 
 running = True
 
@@ -137,9 +173,11 @@ while running:
     # calculate delta time: elapsed time btwn two frames
     dt = clock.tick(FPS) / 1000
 
+    enemy_spawn_timer += dt 
+
+
     # EVENTS
     for event in pygame.event.get():
-
         if event.type == pygame.QUIT:
             running = False
 
@@ -154,6 +192,21 @@ while running:
                 )
 
 
+    # SPAWN ENEMIES 
+    if enemy_spawn_timer >= ENEMY_SPAWN_TIME:
+            enemies.append(
+                create_enemy(
+                    SCREEN_WIDTH,
+                    ENEMY_WIDTH,
+                    ENEMY_HEIGHT,
+                    ENEMY_SPEED
+                )
+            )
+    
+            enemy_spawn_timer = 0.0
+
+
+
     # UPDATE
     # calling update_player function to update player 
     update_player(
@@ -164,21 +217,35 @@ while running:
         SCREEN_WIDTH
     )
 
+    # update bullets
     update_bullets(
         bullets,
         BULLET_SPEED,
         dt
     )
 
+    # update all enemies
+    for enemy in enemies:
+        enemy.update(dt)
+
+    # remove enemies that have gone below the screen 
+    enemies[:] = [
+        enemy 
+        for enemy in enemies 
+        if enemy.rect.top <= SCREEN_HEIGHT
+    ]
+
+    
     # RENDER
     draw_game(
         screen, 
         player, 
         player_image,
-        bullets
+        bullets,
+        enemies
     )
 
-
+    
     
 pygame.quit()
 
