@@ -30,7 +30,7 @@ def update_player(player, position, speed, dt, screen_width):
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, player_image, bullets, enemies, score, score_font):
+def draw_game(screen, player, player_image, bullets, enemies, score, player_health, score_font):
     screen.fill((10, 10, 25))
 
     screen.blit(player_image, player)
@@ -51,9 +51,20 @@ def draw_game(screen, player, player_image, bullets, enemies, score, score_font)
         (255, 255, 255)
     )
 
+    health_surface = score_font.render(
+        f"Health: {player_health}",
+        True,
+        (255, 255, 255)
+    )
+
     screen.blit(
         score_surface,
         (20, 20)
+    )
+
+    screen.blit(
+        health_surface,
+        (20, 60) 
     )
 
     pygame.display.flip()
@@ -122,6 +133,63 @@ def handle_collisions(bullets, enemies):
 
 
 
+def handle_player_collisions(player, enemies):
+    hits = 0
+
+    for enemy in enemies[:]:
+        if player.colliderect(enemy.rect):
+            enemies.remove(enemy)
+            hits += 1
+
+    return hits 
+
+
+
+def draw_game_over(screen, font, score, screen_width, screen_height):
+    game_over_surface = font.render(
+        "GAME OVER!",
+        True,
+        (255, 255, 255)
+    )
+
+    score_surface = font.render(
+        f"Final Score: {score}",
+        True,
+        (255, 255, 255)
+    )
+
+    restart_surface = font.render(
+        "Press R to Restart",
+        True,
+        (255, 255, 255)
+    )
+
+    game_over_rect = game_over_surface.get_rect(
+        center=(
+            screen_width // 2,
+            screen_height // 2 - 50
+        )
+    )
+
+    score_rect = score_surface.get_rect(
+        center=(
+            screen_width // 2,
+            screen_height // 2
+        )
+    )
+
+    restart_rect = restart_surface.get_rect(
+        center=(
+            screen_width // 2,
+            screen_height // 2 + 50
+        )
+    )
+
+    screen.blit(game_over_surface, game_over_rect)
+    screen.blit(score_surface, score_rect)
+    screen.blit(restart_surface, restart_rect)
+
+
 
 # INITIALIZATION
 
@@ -146,6 +214,9 @@ ENEMY_WIDTH = 60
 ENEMY_HEIGHT = 40
 ENEMY_SPEED = 150
 ENEMY_SPAWN_TIME = 1.0
+
+# Health
+PLAYER_STARTING_HEALTH = 3 
  
 # SCREEN
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -197,23 +268,31 @@ enemies = []
 
 score = 0
 
+player_health = PLAYER_STARTING_HEALTH 
+
+
 running = True
+game_over = False
+
 
 while running:
 
+    # TIME
     # calculate delta time: elapsed time btwn two frames
     dt = clock.tick(FPS) / 1000
 
-    enemy_spawn_timer += dt 
-
-
     # EVENTS
     for event in pygame.event.get():
+
+        # close the game window
         if event.type == pygame.QUIT:
             running = False
 
+        # handle key presses
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+
+            # shoot only while game is active
+            if event.key == pygame.K_SPACE and not game_over:
                 bullets.append(
                     create_bullet(
                         player,
@@ -222,58 +301,101 @@ while running:
                     )
                 )
 
+            # restart after game over
+            if event.key == pygame.K_r and game_over:
 
-    # SPAWN ENEMIES 
-    if enemy_spawn_timer >= ENEMY_SPAWN_TIME:
-            enemies.append(
-                create_enemy(
-                    SCREEN_WIDTH,
-                    ENEMY_WIDTH,
-                    ENEMY_HEIGHT,
-                    ENEMY_SPEED
+                score = 0
+                player_health = PLAYER_STARTING_HEALTH
+
+                bullets.clear()
+                enemies.clear()
+
+                enemy_spawn_timer = 0.0
+
+                # reset player to center
+                player_position.x = (
+                    SCREEN_WIDTH - player.width
+                ) / 2
+
+                player.x = round(player_position.x)
+
+                game_over = False
+
+
+    # UPDATE GAME
+    # only update gameplay if we are not currently on game over screen
+    if not game_over:
+
+        # enemy spawn timer
+        enemy_spawn_timer += dt 
+
+
+        # SPAWN ENEMIES - spawn a new enemy when timer expires
+        if enemy_spawn_timer >= ENEMY_SPAWN_TIME:
+                enemies.append(
+                    create_enemy(
+                        SCREEN_WIDTH,
+                        ENEMY_WIDTH,
+                        ENEMY_HEIGHT,
+                        ENEMY_SPEED
+                    )
                 )
-            )
-    
-            enemy_spawn_timer = 0.0
+        
+                enemy_spawn_timer = 0.0
 
 
+        # UPDATE
+        # calling update_player function to update player 
+        update_player(
+            player, 
+            player_position,
+            PLAYER_SPEED, 
+            dt, 
+            SCREEN_WIDTH
+        )
 
-    # UPDATE
-    # calling update_player function to update player 
-    update_player(
-        player, 
-        player_position,
-        PLAYER_SPEED, 
-        dt, 
-        SCREEN_WIDTH
-    )
+        # update bullets
+        update_bullets(
+            bullets,
+            BULLET_SPEED,
+            dt
+        )
 
-    # update bullets
-    update_bullets(
-        bullets,
-        BULLET_SPEED,
-        dt
-    )
+        # update all enemies
+        for enemy in enemies:
+            enemy.update(dt)
 
-    # update all enemies
-    for enemy in enemies:
-        enemy.update(dt)
+        # check collisions
+        score += handle_collisions(
+            bullets,
+            enemies 
+        )
 
-    # check collisions
-    score += handle_collisions(
-        bullets,
-        enemies 
-    )
+        # player health
+        hits = handle_player_collisions(
+            player,
+            enemies
+        )
 
-    # remove enemies that have gone below the screen 
-    enemies[:] = [
-        enemy 
-        for enemy in enemies 
-        if enemy.rect.top <= SCREEN_HEIGHT
-    ]
+        player_health = max(
+            0,
+            player_health - hits
+        )
+
+        # game over
+        if player_health == 0:
+            game_over = True
+
+        # remove enemies that have gone below the screen 
+        enemies[:] = [
+            enemy 
+            for enemy in enemies 
+            if enemy.rect.top <= SCREEN_HEIGHT
+        ]
 
     
     # RENDER
+    # draw normal game
     draw_game(
         screen, 
         player, 
@@ -281,9 +403,22 @@ while running:
         bullets,
         enemies,
         score,
+        player_health,
         score_font
     )
 
+    # draw game over text on top pf game
+    if game_over:
+        draw_game_over(
+            screen,
+            score_font,
+            score,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT
+        )
+
+    # show the completed frame
+    pygame.display.flip()
 
     
 pygame.quit()
