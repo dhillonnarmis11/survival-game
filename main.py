@@ -125,6 +125,18 @@ def handle_player_collisions(player, enemies):
 
 
 
+def remove_escaped_enemies(enemies, screen_height):
+    escaped = 0
+
+    for enemy in enemies[:]:
+        if enemy.rect.top > screen_height:
+            enemies.remove(enemy)
+            escaped += 1
+
+    return escaped
+
+
+
 def draw_game_over(screen, font, score, screen_width, screen_height):
     game_over_surface = font.render(
         "GAME OVER!",
@@ -350,7 +362,7 @@ while running:
             dt
         )
 
-        # update all enemies
+        # update all enemies/move enemies
         for enemy in enemies:
             enemy.update(dt)
 
@@ -371,16 +383,24 @@ while running:
             player_health - hits
         )
 
+
+        # ESCAPED ENEMIES
+        # remove enemies that have gone below the screen 
+        escaped_enemies = remove_escaped_enemies(
+            enemies,
+            SCREEN_HEIGHT
+        )
+
+        player_health = max(
+            0,
+            player_health - escaped_enemies
+        )
+
+
         # game over
         if player_health == 0:
             game_over = True
 
-        # remove enemies that have gone below the screen 
-        enemies[:] = [
-            enemy 
-            for enemy in enemies 
-            if enemy.rect.top <= SCREEN_HEIGHT
-        ]
 
     
     # RENDER
