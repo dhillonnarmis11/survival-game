@@ -4,36 +4,17 @@ import pygame
 import random
 
 from enemy import Enemy
+from player import Player
 
 # FUNCTIONS
-
-# UPDATE PLAYER FUNCTION 
-def update_player(player, position, speed, dt, screen_width):
-
-    # Checking which keyboard keys are being held down/pressed
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_LEFT]:
-        position.x -= speed * dt
-
-    if keys[pygame.K_RIGHT]:
-        position.x += speed * dt
-
-
-    position.x = max(
-        0, 
-        min(position.x, screen_width - player.width)
-    )
-
-    player.x = round(position.x)
 
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, player_image, bullets, enemies, score, player_health, score_font):
+def draw_game(screen, player, bullets, enemies, score, player_health, score_font):
     screen.fill((10, 10, 25))
 
-    screen.blit(player_image, player)
+    player.draw(screen)
 
     for bullet in bullets:
         pygame.draw.rect(
@@ -67,8 +48,6 @@ def draw_game(screen, player, player_image, bullets, enemies, score, player_heal
         (20, 60) 
     )
 
-    pygame.display.flip()
-
 
 
 def create_bullet(player, width, height):
@@ -79,7 +58,7 @@ def create_bullet(player, width, height):
         height
     )
 
-    bullet.midbottom = player.midtop
+    bullet.midbottom = player.rect.midtop
 
     return bullet 
 
@@ -137,7 +116,7 @@ def handle_player_collisions(player, enemies):
     hits = 0
 
     for enemy in enemies[:]:
-        if player.colliderect(enemy.rect):
+        if player.rect.colliderect(enemy.rect):
             enemies.remove(enemy)
             hits += 1
 
@@ -200,9 +179,13 @@ pygame.init()
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
 
+FPS = 60
+
 # Player Dimensions
 PLAYER_WIDTH = 70  
 PLAYER_HEIGHT = 40  
+PLAYER_SPEED = 400   # player travels 400 pixels per second 
+PLAYER_STARTING_HEALTH = 3    
 
 # Bullet Settings
 BULLET_WIDTH = 6
@@ -215,28 +198,14 @@ ENEMY_HEIGHT = 40
 ENEMY_SPEED = 150
 ENEMY_SPAWN_TIME = 1.0
 
-# Health
-PLAYER_STARTING_HEALTH = 3 
+
  
 # SCREEN
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Survival Game: Space Shooter!")
 
-
+# FONT
 score_font = pygame.font.Font(None, 36)
-
-
-# Player starting coordinates 
-player_x = SCREEN_WIDTH // 2   
-player_y = SCREEN_HEIGHT - 80 
-
-# CREATING PLAYER
-player = pygame.Rect(
-    player_x, 
-    player_y, 
-    PLAYER_WIDTH, 
-    PLAYER_HEIGHT
-)
 
 
 # PLAYER IMAGE - LOAD FIGHTER JET PNG FOR PLAYER
@@ -249,16 +218,26 @@ player_image = pygame.transform.smoothscale(
     (PLAYER_WIDTH, PLAYER_HEIGHT)
 )
 
+# PLAYER STARTING COORDINATES
+player_x = SCREEN_WIDTH // 2   
+player_y = SCREEN_HEIGHT - 80 
 
-player_position = pygame.Vector2(player.x, player.y)
+
+# CREATE PLAYER
+player = Player(
+    player_x,
+    player_y,
+    PLAYER_WIDTH,
+    PLAYER_HEIGHT,
+    PLAYER_SPEED,
+    player_image
+)
 
 
 # CLOCK
 # Create the Clock object for game
 clock = pygame.time.Clock()
 
-FPS = 60
-PLAYER_SPEED = 400   # player travels 400 pixels per second 
 
 enemy_spawn_timer = 0.0
 
@@ -313,11 +292,11 @@ while running:
                 enemy_spawn_timer = 0.0
 
                 # reset player to center
-                player_position.x = (
-                    SCREEN_WIDTH - player.width
+                player.position.x = (
+                    SCREEN_WIDTH - player.rect.width
                 ) / 2
 
-                player.x = round(player_position.x)
+                player.rect.x = round(player.position.x)
 
                 game_over = False
 
@@ -345,12 +324,9 @@ while running:
 
 
         # UPDATE
-        # calling update_player function to update player 
-        update_player(
-            player, 
-            player_position,
-            PLAYER_SPEED, 
-            dt, 
+
+        player.update(
+            dt,
             SCREEN_WIDTH
         )
 
@@ -398,8 +374,7 @@ while running:
     # draw normal game
     draw_game(
         screen, 
-        player, 
-        player_image,
+        player,
         bullets,
         enemies,
         score,
