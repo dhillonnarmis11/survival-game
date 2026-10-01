@@ -76,7 +76,7 @@ def update_bullets(bullets, speed, dt):
 
 
 
-def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed):
+def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed, enemy_image):
     x = random.randint(
         0,
         screen_width - enemy_width
@@ -89,7 +89,8 @@ def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed):
         y,
         enemy_width,
         enemy_height,
-        enemy_speed
+        enemy_speed,
+        enemy_image
     )
 
 
@@ -182,8 +183,8 @@ SCREEN_HEIGHT = 700
 FPS = 60
 
 # Player Dimensions
-PLAYER_WIDTH = 70  
-PLAYER_HEIGHT = 40  
+PLAYER_WIDTH = 80  
+PLAYER_HEIGHT = 50  
 PLAYER_SPEED = 400   # player travels 400 pixels per second 
 PLAYER_STARTING_HEALTH = 3    
 
@@ -193,8 +194,8 @@ BULLET_HEIGHT = 20
 BULLET_SPEED = 700
 
 # Enemies
-ENEMY_WIDTH = 60
-ENEMY_HEIGHT = 40
+ENEMY_WIDTH = 70
+ENEMY_HEIGHT = 50
 ENEMY_SPEED = 150
 ENEMY_SPAWN_TIME = 1.0
 
@@ -217,6 +218,17 @@ player_image = pygame.transform.smoothscale(
     player_image,
     (PLAYER_WIDTH, PLAYER_HEIGHT)
 )
+
+# ENEMY IMAGE
+enemy_image = pygame.image.load(
+    "assets/images/enemy_ship.png"
+).convert_alpha()
+
+enemy_image = pygame.transform.smoothscale(
+    enemy_image,
+    (ENEMY_WIDTH, ENEMY_HEIGHT)
+)
+
 
 # PLAYER STARTING COORDINATES
 player_x = SCREEN_WIDTH // 2   
@@ -316,7 +328,8 @@ while running:
                         SCREEN_WIDTH,
                         ENEMY_WIDTH,
                         ENEMY_HEIGHT,
-                        ENEMY_SPEED
+                        ENEMY_SPEED,
+                        enemy_image
                     )
                 )
         
