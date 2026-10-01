@@ -11,8 +11,13 @@ from player import Player
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, bullets, enemies, score, player_health, score_font):
+def draw_game(screen, player, bullets, enemies, stars, score, player_health, score_font):
     screen.fill((10, 10, 25))
+
+    draw_stars(
+        screen,
+        stars
+    )
 
     player.draw(screen)
 
@@ -137,6 +142,44 @@ def remove_escaped_enemies(enemies, screen_height):
 
 
 
+def create_stars(count, screen_width, screen_height):
+    stars = []
+
+    for _ in range(count):
+        star = {
+            "x": random.randint(0, screen_width),
+            "y": random.randint(0, screen_height),
+            "speed": random.randint(50, 200),
+            "size": random.randint(1, 3)
+        }
+
+        stars.append(star)
+
+    return stars
+
+
+
+def update_stars(stars, dt, screen_width, screen_height):
+    for star in stars:
+
+        star["y"] += star["speed"] * dt
+
+        if star["y"] > screen_height:
+            star["y"] = 0
+            star["x"] = random.randint(0, screen_width)
+
+
+
+def draw_stars(screen, stars):
+    for star in stars:
+        pygame.draw.circle(
+            screen,
+            (200, 200, 220),
+            (int(star["x"]), int(star["y"])),
+            star["size"]
+        )
+
+
 def draw_game_over(screen, font, score, screen_width, screen_height):
     game_over_surface = font.render(
         "GAME OVER!",
@@ -191,6 +234,8 @@ pygame.init()
 # Game Window
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
+
+STAR_COUNT = 140
 
 FPS = 60
 
@@ -256,6 +301,14 @@ player = Player(
     PLAYER_HEIGHT,
     PLAYER_SPEED,
     player_image
+)
+
+
+# CREATE STARS
+stars = create_stars(
+    STAR_COUNT,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT
 )
 
 
@@ -357,6 +410,13 @@ while running:
 
         # UPDATE
 
+        update_stars(
+            stars,
+            dt,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT
+        )
+
         player.update(
             dt,
             SCREEN_WIDTH
@@ -368,6 +428,7 @@ while running:
             BULLET_SPEED,
             dt
         )
+
 
         # update all enemies/move enemies
         for enemy in enemies:
@@ -417,10 +478,12 @@ while running:
         player,
         bullets,
         enemies,
+        stars,
         score,
         player_health,
         score_font
     )
+
 
     # draw game over text on top pf game
     if game_over:
