@@ -11,7 +11,7 @@ from player import Player
 
 
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, bullets, enemies, stars, score, player_health, score_font):
+def draw_game(screen, player, bullets, enemies, stars, score, player_health, level, score_font):
     screen.fill((10, 10, 25))
 
     draw_stars(
@@ -43,6 +43,12 @@ def draw_game(screen, player, bullets, enemies, stars, score, player_health, sco
         (255, 255, 255)
     )
 
+    level_surface = score_font.render(
+        f"Level: {level}",
+        True,
+        (255, 255, 255)
+    )
+
     screen.blit(
         score_surface,
         (20, 20)
@@ -51,6 +57,11 @@ def draw_game(screen, player, bullets, enemies, stars, score, player_health, sco
     screen.blit(
         health_surface,
         (20, 60) 
+    )
+
+    screen.blit(
+        level_surface,
+        (20, 100)
     )
 
 
@@ -170,6 +181,25 @@ def update_stars(stars, dt, screen_width, screen_height):
 
 
 
+def get_difficulty(score):
+    enemy_speed = min(
+        ENEMY_SPEED + score * SPEED_INCREASE_PER_POINT,
+        MAX_ENEMY_SPEED
+    )
+
+    spawn_time = max(
+        ENEMY_SPAWN_TIME - score * SPAWN_DECREASE_PER_POINT,
+        MIN_ENEMY_SPAWN_TIME
+    )
+
+    return enemy_speed, spawn_time
+
+
+
+def get_level(score):
+    return score // 10 + 1
+
+
 def draw_stars(screen, stars):
     for star in stars:
         pygame.draw.circle(
@@ -256,6 +286,10 @@ ENEMY_WIDTH = 70
 ENEMY_HEIGHT = 50
 ENEMY_SPEED = 150
 ENEMY_SPAWN_TIME = 1.0
+MAX_ENEMY_SPEED = 350
+MIN_ENEMY_SPAWN_TIME = 0.35
+SPEED_INCREASE_PER_POINT = 5
+SPAWN_DECREASE_PER_POINT = 0.02
 
 
  
@@ -393,14 +427,18 @@ while running:
             fire_timer = 0.0
 
 
+        current_enemy_speed, current_spawn_time = get_difficulty(
+            score
+        )
+
         # SPAWN ENEMIES - spawn a new enemy when timer expires
-        if enemy_spawn_timer >= ENEMY_SPAWN_TIME:
+        if enemy_spawn_timer >= current_spawn_time:
                 enemies.append(
                     create_enemy(
                         SCREEN_WIDTH,
                         ENEMY_WIDTH,
                         ENEMY_HEIGHT,
-                        ENEMY_SPEED,
+                        current_enemy_speed,
                         enemy_image
                     )
                 )
@@ -470,6 +508,9 @@ while running:
             game_over = True
 
 
+    # LEVEL
+    level = get_level(score)
+
     
     # RENDER
     # draw normal game
@@ -481,6 +522,7 @@ while running:
         stars,
         score,
         player_health,
+        level,
         score_font
     )
 
