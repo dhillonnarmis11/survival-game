@@ -204,6 +204,7 @@ PLAYER_STARTING_HEALTH = 3
 BULLET_WIDTH = 6
 BULLET_HEIGHT = 20
 BULLET_SPEED = 700
+FIRE_COOLDOWN = 0.20
 
 # Enemies
 ENEMY_WIDTH = 70
@@ -264,6 +265,7 @@ clock = pygame.time.Clock()
 
 
 enemy_spawn_timer = 0.0
+fire_timer = 0.0
 
 bullets = [] 
 
@@ -294,16 +296,6 @@ while running:
         # handle key presses
         if event.type == pygame.KEYDOWN:
 
-            # shoot only while game is active
-            if event.key == pygame.K_SPACE and not game_over:
-                bullets.append(
-                    create_bullet(
-                        player,
-                        BULLET_WIDTH,
-                        BULLET_HEIGHT
-                    )
-                )
-
             # restart after game over
             if event.key == pygame.K_r and game_over:
 
@@ -314,6 +306,7 @@ while running:
                 enemies.clear()
 
                 enemy_spawn_timer = 0.0
+                fire_timer = FIRE_COOLDOWN 
 
                 # reset player to center
                 player.position.x = (
@@ -331,6 +324,20 @@ while running:
 
         # enemy spawn timer
         enemy_spawn_timer += dt 
+
+        fire_timer += dt 
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE] and fire_timer >= FIRE_COOLDOWN:
+            bullets.append(
+                create_bullet(
+                    player,
+                    BULLET_WIDTH,
+                    BULLET_HEIGHT
+                )
+            )
+            fire_timer = 0.0
 
 
         # SPAWN ENEMIES - spawn a new enemy when timer expires
