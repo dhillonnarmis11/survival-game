@@ -5,13 +5,24 @@ import random
 
 from enemy import Enemy
 from player import Player
+from particle import Particle
+
 
 # FUNCTIONS
-
-
-
 # RENDERING FUNCTION FOR GRAPHICS ON SCREEN
-def draw_game(screen, player, bullets, enemies, stars, score, player_health, level, score_font):
+def draw_game(
+        screen, 
+        player, 
+        bullets, 
+        enemies, 
+        particles,
+        stars, 
+        score, 
+        player_health, 
+        level, 
+        score_font
+    ):
+
     screen.fill((10, 10, 25))
 
     draw_stars(
@@ -30,6 +41,10 @@ def draw_game(screen, player, bullets, enemies, stars, score, player_health, lev
 
     for enemy in enemies:
         enemy.draw(screen) 
+
+    for particle in particles:
+        particle.draw(screen)
+
 
     score_surface = score_font.render(
         f"Score: {score}",
@@ -111,13 +126,20 @@ def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed, enemy_ima
 
 
 
-def handle_collisions(bullets, enemies):
+def handle_collisions(bullets, enemies, particles):
     enemies_destroyed = 0
 
     for bullet in bullets[:]:
         for enemy in enemies[:]:
 
             if bullet.colliderect(enemy.rect):
+
+                create_explosion(
+                    enemy.rect.centerx,
+                    enemy.rect.centery,
+                    particles
+                )
+
                 bullets.remove(bullet)
                 enemies.remove(enemy)
 
@@ -208,6 +230,31 @@ def draw_stars(screen, stars):
             (int(star["x"]), int(star["y"])),
             star["size"]
         )
+
+
+
+def create_explosion(x, y, particles):
+    for _ in range(20):
+
+        velocity_x = random.randint(-200, 200)
+        velocity_y = random.randint(-200, 200)
+
+        lifetime = random.uniform(0.3, 0.7)
+
+        size = random.randint(2, 5)
+
+        particle = Particle(
+            x,
+            y,
+            velocity_x,
+            velocity_y,
+            lifetime,
+            size
+        )
+
+        particles.append(particle)
+
+
 
 
 def draw_game_over(screen, font, score, screen_width, screen_height):
@@ -355,8 +402,8 @@ enemy_spawn_timer = 0.0
 fire_timer = 0.0
 
 bullets = [] 
-
 enemies = []
+particles = []
 
 score = 0
 
@@ -391,6 +438,7 @@ while running:
 
                 bullets.clear()
                 enemies.clear()
+                particles.clear()
 
                 enemy_spawn_timer = 0.0
                 fire_timer = FIRE_COOLDOWN 
@@ -472,10 +520,22 @@ while running:
         for enemy in enemies:
             enemy.update(dt)
 
+        # particles update and remove dead particles
+        for particle in particles:
+            particle.update(dt)
+
+        particles[:] = [
+            particle
+            for particle in particles
+            if not particle.is_dead()
+        ]
+
+
         # check collisions
         score += handle_collisions(
             bullets,
-            enemies 
+            enemies,
+            particles 
         )
 
         # player health
@@ -519,6 +579,7 @@ while running:
         player,
         bullets,
         enemies,
+        particles,
         stars,
         score,
         player_health,
