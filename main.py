@@ -126,7 +126,7 @@ def create_enemy(screen_width, enemy_width, enemy_height, enemy_speed, enemy_ima
 
 
 
-def handle_collisions(bullets, enemies, particles):
+def handle_collisions(bullets, enemies, particles, explosion_sound):
     enemies_destroyed = 0
 
     for bullet in bullets[:]:
@@ -139,6 +139,8 @@ def handle_collisions(bullets, enemies, particles):
                     enemy.rect.centery,
                     particles
                 )
+
+                explosion_sound.play()
 
                 bullets.remove(bullet)
                 enemies.remove(enemy)
@@ -368,6 +370,19 @@ enemy_image = pygame.transform.smoothscale(
     (ENEMY_WIDTH, ENEMY_HEIGHT)
 )
 
+# SOUNDS
+laser_sound = pygame.mixer.Sound(
+    "assets/sounds/laser.wav"
+)
+
+explosion_sound = pygame.mixer.Sound(
+    "assets/sounds/explosion.wav"
+)
+
+laser_sound.set_volume(0.25)
+explosion_sound.set_volume(0.40)
+
+
 
 # PLAYER STARTING COORDINATES
 player_x = SCREEN_WIDTH // 2   
@@ -472,6 +487,7 @@ while running:
                     BULLET_HEIGHT
                 )
             )
+            laser_sound.play()
             fire_timer = 0.0
 
 
@@ -535,7 +551,8 @@ while running:
         score += handle_collisions(
             bullets,
             enemies,
-            particles 
+            particles,
+            explosion_sound 
         )
 
         # player health
