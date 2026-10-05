@@ -81,6 +81,39 @@ def draw_game(
 
 
 
+def draw_menu(screen, font, screen_width, screen_height):
+
+    title_surface = font.render(
+        "SURVIVAL GAME",
+        True,
+        (255, 255, 255)
+    )
+
+    start_surface = font.render(
+        "Press ENTER to Start",
+        True,
+        (255, 255, 255)
+    )
+
+    title_rect = title_surface.get_rect(
+        center=(
+            screen_width // 2,
+            screen_height // 2 - 50
+        )
+    )
+
+    start_rect = start_surface.get_rect(
+        center=(
+            screen_width // 2,
+            screen_height // 2 + 30
+        )
+    )
+
+    screen.blit(title_surface, title_rect)
+    screen.blit(start_surface, start_rect)
+
+
+
 def create_bullet(player, width, height):
     bullet = pygame.Rect(
         0,
@@ -314,6 +347,10 @@ pygame.init()
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
 
+MENU = "menu"
+PLAYING = "playing"
+GAME_OVER = "game_over"
+
 STAR_COUNT = 140
 
 FPS = 60
@@ -424,9 +461,11 @@ score = 0
 
 player_health = PLAYER_STARTING_HEALTH 
 
-
+# is application open
 running = True
-game_over = False
+
+# what part of game we're currently in
+game_state = MENU
 
 
 while running:
@@ -445,8 +484,11 @@ while running:
         # handle key presses
         if event.type == pygame.KEYDOWN:
 
+            if event.key == pygame.K_RETURN and game_state == MENU:
+                game_state = PLAYING
+
             # restart after game over
-            if event.key == pygame.K_r and game_over:
+            if event.key == pygame.K_r and game_state == GAME_OVER:
 
                 score = 0
                 player_health = PLAYER_STARTING_HEALTH
@@ -465,12 +507,12 @@ while running:
 
                 player.rect.x = round(player.position.x)
 
-                game_over = False
+                game_state = PLAYING
 
 
     # UPDATE GAME
     # only update gameplay if we are not currently on game over screen
-    if not game_over:
+    if game_state == PLAYING:
 
         # enemy spawn timer
         enemy_spawn_timer += dt 
@@ -582,7 +624,7 @@ while running:
 
         # game over
         if player_health == 0:
-            game_over = True
+            game_state = GAME_OVER
 
 
     # LEVEL
@@ -606,7 +648,54 @@ while running:
 
 
     # draw game over text on top pf game
-    if game_over:
+    if game_state == MENU:
+
+        screen.fill((10, 10, 25))
+
+        draw_stars(
+            screen,
+            stars
+        )
+
+        draw_menu(
+            screen,
+            score_font,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT
+        )
+
+
+    elif game_state == PLAYING:
+
+        draw_game(
+            screen, 
+            player,
+            bullets,
+            enemies,
+            particles,
+            stars,
+            score,
+            player_health,
+            level,
+            score_font
+            )
+
+
+    elif game_state == GAME_OVER:
+        
+        draw_game(
+            screen, 
+            player,
+            bullets,
+            enemies,
+            particles,
+            stars,
+            score,
+            player_health,
+            level,
+            score_font
+            )
+
         draw_game_over(
             screen,
             score_font,
